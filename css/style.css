@@ -10,6 +10,7 @@
   z-index: 1000;
   font-size: large;
   text-align: center;
+  position: relative;
 }
 
 .affix {
