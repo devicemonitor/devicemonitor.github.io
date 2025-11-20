@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Remote Particle</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+    <script type="text/javascript" src="https://codeorigin.jquery.com/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="js/bootstrap.min.js"></script>
+    <script>
+      $(document).ready(function() {
+        var statusTimer = null;
+        var timer1, timer2, timer3, timer4
+        var baseURL = "https://api.particle.io/v1/devices/";
+
+        //--------------------------------------------------------------
+        // START - EDITABLE USER DATA
+        //
+        var accessToken = "699e546e0d7cc1f980b41b897ec6aab546aa33ff";
+        var deviceID = "e00fce68256dd9147325bc9a";
+
+        // App Heading
+        var appHeading = "Remote Particle";
+
+        // Button Labels
+        var label1 = "PIR 1"; // button label 1 (set to "" to disable)
+        var label2 = "PIR 2"; // button label 2 (set to "" to disable)
+        var label3 = "BREAK 1"; // button label 3 (set to "" to disable)
+        var label4 = "BREAK 2"; // button label 4 (set to "" to disable)
+        
+        // Variable 1
+        var varKey1 = "detect1";
+        var var1onLabel = "MOTION DETECTED";
+        var var1offLabel = "NO MOTION";
+        var var1onState = 1; // Set to null to allow raw value to be displayed.
+        var var1offState = 0; // Set to null to allow raw value to be displayed.
+        var refresh1 = 5000; // variable 1 refresh rate in milliseconds (set to 0 to disable)
+
+        // Variable 2
+        var varKey2 = "detect2";
+        var var2onLabel = "MOTION DETECTED";
+        var var2offLabel = "NO MOTION";
+        var var2onState = 1; // Set to null to allow raw value to be displayed.
+        var var2offState = 0; // Set to null to allow raw value to be displayed.
+        var refresh2 = 5000; // variable 2 refresh rate in milliseconds (set to 0 to disable)
+
+        // Variable 3
+        var varKey3 = "detect3";
+        var var3onLabel = "BREAK DETECTED";
+        var var3offLabel = "NO BREAK";
+        var var3onState = 1; // Set to null to allow raw value to be displayed.
+        var var3offState = 0; // Set to null to allow raw value to be displayed.
+        var refresh3 = 5000; // variable 3 refresh rate in milliseconds (set to 0 to disable)
+
+        // Variable 4
+        var varKey4 = "detect4";
+        var var4onLabel = "BREAK DETECTED";
+        var var4offLabel = "NO BREAK";
+        var var4onState = 1; // Set to null to allow raw value to be displayed.
+        var var4offState = 0; // Set to null to allow raw value to be displayed.
+        var refresh4 = 5000; // variable 4 refresh rate in milliseconds (set to 0 to disable)
+
+        const textList = document.getElementById('textList'); // scroll-bar window
+        //
+        // END - EDITABLE USER DATA
+        //--------------------------------------------------------------
+
+        // Update app heading
+        $("#app-heading").html(appHeading);
+
+        // Override button styles
+        $(".btn-lg").css({"width":"60%"});
+
+        // Update button labels to code definitions
+        // or hide them if not defined.
+        (label1) ? $("#button-1").html(label1) : $("#button-1").hide();
+        (label2) ? $("#button-2").html(label2) : $("#button-2").hide();
+        (label3) ? $("#button-3").html(label3) : $("#button-3").hide();
+        (label4) ? $("#button-4").html(label4) : $("#button-4").hide();
+
+        // Override text input styles
+        $(".form-control").css({"display":"inline","width":"35%"});
+
+        // Hide variable text fields if not in use.
+        if(refresh1 === 0) $("#var-val-1").hide();
+        if(refresh2 === 0) $("#var-val-2").hide();
+        if(refresh3 === 0) $("#var-val-3").hide();
+        if(refresh4 === 0) $("#var-val-4").hide();
+
+        // Auto-refresh
+        // Turn on/off the variable refresh if refresh rates are defined
+        if(refresh1) {
+          $("#get-var-1").attr("disabled", "disabled");
+          timer1 = setInterval(function () {
+            getVariable1();
+          }, refresh1);
+        }
+        if(refresh2) {
+          $("#get-var-2").attr("disabled", "disabled");
+          timer2 = setInterval(function () {
+            getVariable2();
+          }, refresh2);
+        }
+        if(refresh3) {
+          $("#get-var-3").attr("disabled", "disabled");
+          timer3 = setInterval(function () {
+            getVariable3();
+          }, refresh3);
+        }
+        if(refresh4) {
+          $("#get-var-4").attr("disabled", "disabled");
+          timer4 = setInterval(function () {
+            getVariable4();
+          }, refresh4);
+        }
+
+        // Alerts
+        ////
+        $("#info-alert").alert();
+        $("#info-alert").affix();
+
+        // Methods
+        ////
+        function onMethodSuccess() {
+          alert = $("#info-alert");
+          alert.text("Success!").removeClass("alert-danger").addClass("alert-success");
+          if(statusTimer != null) {
+            clearTimeout(statusTimer);
+            alert.hide();
+            setTimeout(function() {
+              alert.show();
+              statusTimer = setTimeout(function() {
+                statusTimer = null;
+                alert.hide();
+              }, 1750);
+            }, 250);
+          }
+          else {
+            alert.show();
+            statusTimer = setTimeout(function() {
+              statusTimer = null;
+              alert.hide();
+            }, 2000);
+          }
+        }
+
+        function onMethodFailure(data) {
+          alert = $("#info-alert");
+          alert.text((data)?"No Response "+data:"No Response").removeClass("alert-success").addClass("alert-danger");
+          if(statusTimer != null) {
+            clearTimeout(statusTimer);
+            alert.hide();
+            setTimeout(function() {
+              alert.show();
+              statusTimer = setTimeout(function() {
+                statusTimer = null;
+                alert.hide();
+              }, 1750);
+            }, 250);
+          }
+          else {
+            alert.show();
+            statusTimer = setTimeout(function() {
+              statusTimer = null;
+              alert.hide();
+            }, 2000);
+          }
+        }
+
+        // The base level run method command
+        function doMethod(method, data) {
+          var url = baseURL + deviceID + "/" + method;
+          $.ajax({
+            type: "POST",
+            url: url,
+            data: {
+              access_token: accessToken,
+              args: data
+            },
+            dataType: "json"
+          }).success(function(obj) {
+            console.log(obj);
+            (obj.return_value && obj.return_value == 200) ? onMethodSuccess() : onMethodFailure((obj.error)?obj.error:"");
+          }).fail(function(obj) {
+            onMethodFailure();
+          });
+        }
+
+        $("#button-1").on("click", function () {
+          getVariable1();
+        });
+        $("#button-2").on("click", function () {
+          getVariable2();
+        });
+        $("#button-3").on("click", function () {
+          getVariable3();
+        });
+        $("#button-4").on("click", function () {
+          getVariable4();
+        });
+
+        ////
+        // Variables
+        ////
+        function getVariable(variable, callback) {
+          $.ajax({
+          dataType: 'json',
+          method: 'GET',
+          url: 'https://api.particle.io/v1/devices/' + deviceID + '/' + variable,
+          headers: {
+            'Authorization': 'Bearer ' + accessToken,
+            'Accept': 'application/json'
+          },
+          success: function(obj) {
+            console.log(obj);
+            (obj.coreInfo.deviceID && obj.coreInfo.deviceID == deviceID) ? onMethodSuccess() : onMethodFailure((obj.error)?obj.error:"");
+            callback(obj.result);
+          },
+          error: function(obj) {
+            onMethodFailure();
+          }
+          });
+        }
+
+        // Get variable methods
+        function getVariable1() {
+          getVariable(varKey1, function (res) {
+            if(res === var1onState) {
+              $("#var-val-1").val(var1onLabel).css("border", "3px solid red");
+              addMoreItems("PIR 1");
+            }
+            else if(res === var1offState)
+              $("#var-val-1").val(var1offLabel).css("border", "3px solid green");
+            else
+              $("#var-val-1").val("---").css("border", "1px solid gray");
+          });
+        }
+        function getVariable2() {
+          getVariable(varKey2, function (res) {
+            if(res === var2onState) {
+              $("#var-val-2").val(var2onLabel).css("border", "3px solid red");
+              addMoreItems("PIR 2");
+            }
+            else if(res === var2offState)
+              $("#var-val-2").val(var2offLabel).css("border", "3px solid green");
+            else
+              $("#var-val-2").val("---").css("border", "1px solid gray");
+          });
+        }
+        function getVariable3() {
+          getVariable(varKey3, function (res) {
+            if(res === var3onState) {
+              $("#var-val-3").val(var3onLabel).css("border", "3px solid red");
+              addMoreItems("BREAK 1");
+            }
+            else if(res === var3offState)
+              $("#var-val-3").val(var3offLabel).css("border", "3px solid green");
+            else
+              $("#var-val-3").val("---").css("border", "1px solid gray");
+          });
+        }
+        function getVariable4() {
+          getVariable(varKey4, function (res) {
+            if(res === var4onState) {
+              $("#var-val-4").val(var4onLabel).css("border", "3px solid red");
+              addMoreItems("BREAK 2");
+            }
+            else if(res === var4offState)
+              $("#var-val-4").val(var4offLabel).css("border", "3px solid green");
+            else
+              $("#var-val-4").val("---").css("border", "1px solid gray");
+          });
+        }
+        function addMoreItems(detectorName) {
+          const now = new Date();
+          const utcHours = now.getUTCHours();
+          const utcMinutes = now.getUTCMinutes();
+          const utcSeconds = now.getUTCSeconds();
+          const formattedTime = `${String(utcHours).padStart(2, '0')}:${String(utcMinutes).padStart(2, '0')}:${String(utcSeconds).padStart(2, '0')}`;
+          const newItem = document.createElement('li');
+          newItem.textContent = `UTC Time: ${formattedTime} Alarm on ${detectorName}`;
+          textList.prepend(newItem);
+        }
+      });
+    </script>
+
+    <div class="container">
+      <div class="panel panel-primary">
+        <div class="panel-heading">
+          <h4 class="panel-title" id="app-heading">
+            Control
+          </h4>
+        </div>
+        <div id="buttons" class="panel">
+          <div class="panel-body">
+            <button type="button" class="btn btn-primary btn-lg" id="button-1">BUTTON 1</button>
+            <input type="text" class="form-control" value="---" readonly id="var-val-1"><br/><br/>
+            <button type="button" class="btn btn-primary btn-lg" id="button-2">BUTTON 2</button>
+            <input type="text" class="form-control" value="---" readonly id="var-val-2"><br/><br/>
+            <button type="button" class="btn btn-primary btn-lg" id="button-3">BUTTON 3</button>
+            <input type="text" class="form-control" value="---" readonly id="var-val-3"><br/><br/>
+            <button type="button" class="btn btn-primary btn-lg" id="button-4">BUTTON 4</button>
+            <input type="text" class="form-control" value="---" readonly id="var-val-4"><br/><br/>
+          </div>
+        </div>
+      </div>
+      <div class="scroll-container">
+        <ul id="textList">
+        </ul>
+      </div>
+      <div class="alert fade in" id="info-alert" hidden data-spy="affix"></div>
+    </div>
+  </body>
+</html>
