@@ -8,6 +8,8 @@
 
 .alert {
   z-index: 1000;
+  font-size: large;
+  text-align: center;
 }
 
 .affix {
