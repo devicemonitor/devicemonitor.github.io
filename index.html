@@ -130,52 +130,20 @@
         $("#info-alert").alert();
         $("#info-alert").affix();
 
+        onMethodFailure(); // Show "No Connection" initially
+
         // Methods
         ////
         function onMethodSuccess() {
           alert = $("#info-alert");
-          alert.text("Success!").removeClass("alert-danger").addClass("alert-success");
-          if(statusTimer != null) {
-            clearTimeout(statusTimer);
-            alert.hide();
-            setTimeout(function() {
-              alert.show();
-              statusTimer = setTimeout(function() {
-                statusTimer = null;
-                alert.hide();
-              }, 1750);
-            }, 250);
-          }
-          else {
-            alert.show();
-            statusTimer = setTimeout(function() {
-              statusTimer = null;
-              alert.hide();
-            }, 2000);
-          }
+          alert.text("Connection Established").removeClass("alert-danger").addClass("alert-success");
+          alert.show();
         }
 
         function onMethodFailure(data) {
           alert = $("#info-alert");
-          alert.text((data)?"No Response "+data:"No Response").removeClass("alert-success").addClass("alert-danger");
-          if(statusTimer != null) {
-            clearTimeout(statusTimer);
-            alert.hide();
-            setTimeout(function() {
-              alert.show();
-              statusTimer = setTimeout(function() {
-                statusTimer = null;
-                alert.hide();
-              }, 1750);
-            }, 250);
-          }
-          else {
-            alert.show();
-            statusTimer = setTimeout(function() {
-              statusTimer = null;
-              alert.hide();
-            }, 2000);
-          }
+          alert.text((data)?"No Response "+data:"No Connection").removeClass("alert-success").addClass("alert-danger");
+          alert.show();
         }
 
         // The base level run method command
@@ -314,12 +282,12 @@
             <input type="text" class="form-control" value="---" readonly id="var-val-4"><br/><br/>
           </div>
         </div>
+        <div class="alert fade in" id="info-alert" hidden data-spy="affix"></div>
       </div>
       <div class="scroll-container">
         <ul id="textList">
         </ul>
       </div>
-      <div class="alert fade in" id="info-alert" hidden data-spy="affix"></div>
     </div>
   </body>
 </html>
