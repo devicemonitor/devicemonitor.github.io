@@ -21,7 +21,7 @@
     <script>
       $(document).ready(function() {
         var statusTimer = null;
-        var timer1, timer2, timer3, timer4
+        var timer1, timer2, timer3, timer4, timer5;
         var baseURL = "https://api.particle.io/v1/devices/";
 
         //--------------------------------------------------------------
@@ -70,6 +70,10 @@
         var var4onState = 1; // Set to null to allow raw value to be displayed.
         var var4offState = 0; // Set to null to allow raw value to be displayed.
         var refresh4 = 5000; // variable 4 refresh rate in milliseconds (set to 0 to disable)
+
+        // Variable 5
+        var varKey5 = "battV";
+        var refresh5 = 20000; // update battery meter
 
         const textList = document.getElementById('textList'); // scroll-bar window
         //
@@ -123,6 +127,11 @@
           timer4 = setInterval(function () {
             getVariable4();
           }, refresh4);
+        }
+        if(refresh5) {
+          timer5 = setInterval(function () {
+            getVariable5();
+          }, refresh5);
         }
 
         // Alerts
@@ -250,6 +259,13 @@
               $("#var-val-4").val("---").css("border", "1px solid gray");
           });
         }
+        function getVariable5() {
+          getVariable(varKey5, function (res) {
+            appHeading = `HUB 01: Battery ${res}%`;
+            $("#app-heading").html(appHeading);
+          });
+        }
+
         function addMoreItems(detectorName) {
           const now = new Date();
           const utcHours = now.getUTCHours();
