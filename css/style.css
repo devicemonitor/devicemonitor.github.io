@@ -2,6 +2,10 @@
   margin-top: 20px;
 }
 
+.panel-title {
+  font-size: 24px; /* Larger font size for the title */
+}
+
 .input-group {
   margin-top:15px;
 }
