@@ -15,65 +15,81 @@
     <![endif]-->
   </head>
   <body>
-
     <script type="text/javascript" src="https://codeorigin.jquery.com/jquery-2.0.3.min.js"></script>
     <script type="text/javascript" src="js/bootstrap.min.js"></script>
     <script>
       $(document).ready(function() {
         var statusTimer = null;
-        var timer1, timer2, timer3, timer4, timer5;
+        var timer1;
+        var refresh1 = 5000; // refresh rate in milliseconds (set to 0 to disable)
         var baseURL = "https://api.particle.io/v1/devices/";
 
-        //--------------------------------------------------------------
         // START - EDITABLE USER DATA
-        //
         var accessToken = "dd25fbdacb51dd604cee2405392dc88db2daf889";
-        var deviceID = "e00fce68256dd9147325bc9a";
+        var deviceID1 = "e00fce68256dd9147325bc9a";
+	      var deviceID2 = "e00fce68afb66a4d1ddebe2b";
 
         // App Heading
-        var appHeading = "Remote Particle";
+        var appHeading1 = "Remote Particle";
+        var appHeading2 = "";
 
         // Button Labels
-        var label1 = "PIR 1"; // button label 1 (set to "" to disable)
-        var label2 = "PIR 2"; // button label 2 (set to "" to disable)
-        var label3 = "BREAK 1"; // button label 3 (set to "" to disable)
-        var label4 = "BREAK 2"; // button label 4 (set to "" to disable)
+        var label1 = "PIR 1"; // button label (set to "" to disable)
+        var label2 = "PIR 2"; 
+        var label3 = "BREAK 1"; 
+        var label4 = "BREAK 2"; 
+        var label5 = "RAD 1"; 
+        var label6 = "IMU 1"; 
+        var label7 = "HUMAN 1"; 
         
-        // Variable 1
-        var varKey1 = "detect1";
+        // Variable 1 - PIR 1
+        var varKey1 = "pir1";
         var var1onLabel = "MOTION DETECTED";
-        var var1offLabel = "NO MOTION";
+        var var1offLabel = "";
         var var1onState = 1; // Set to null to allow raw value to be displayed.
         var var1offState = 0; // Set to null to allow raw value to be displayed.
-        var refresh1 = 5000; // variable 1 refresh rate in milliseconds (set to 0 to disable)
 
-        // Variable 2
-        var varKey2 = "detect2";
+        // Variable 2 - PIR 2
+        var varKey2 = "pir2";
         var var2onLabel = "MOTION DETECTED";
-        var var2offLabel = "NO MOTION";
+        var var2offLabel = "";
         var var2onState = 1; // Set to null to allow raw value to be displayed.
         var var2offState = 0; // Set to null to allow raw value to be displayed.
-        var refresh2 = 5000; // variable 2 refresh rate in milliseconds (set to 0 to disable)
 
-        // Variable 3
-        var varKey3 = "detect3";
+        // Variable 3 - BREAK 1
+        var varKey3 = "break1";
         var var3onLabel = "BREAK DETECTED";
-        var var3offLabel = "NO BREAK";
+        var var3offLabel = "";
         var var3onState = 1; // Set to null to allow raw value to be displayed.
         var var3offState = 0; // Set to null to allow raw value to be displayed.
-        var refresh3 = 5000; // variable 3 refresh rate in milliseconds (set to 0 to disable)
 
-        // Variable 4
-        var varKey4 = "detect4";
+        // Variable 4 - BREAK 2
+        var varKey4 = "break2";
         var var4onLabel = "BREAK DETECTED";
-        var var4offLabel = "NO BREAK";
+        var var4offLabel = "";
         var var4onState = 1; // Set to null to allow raw value to be displayed.
         var var4offState = 0; // Set to null to allow raw value to be displayed.
-        var refresh4 = 5000; // variable 4 refresh rate in milliseconds (set to 0 to disable)
 
-        // Variable 5
-        var varKey5 = "battV";
-        var refresh5 = 10000; // update battery meter
+	      // Variable 5 - RAD 1
+        var varKey5 = "rad1";
+        var var5onLabel = "RAD DETECTED";
+        var var5offLabel = "";
+
+	      // Variable 6 - IMU 1
+        var varKey6 = "imu1";
+        var var6onLabel = "MOTION DETECTED";
+        var var6offLabel = "";
+
+	      // Variable 7 - HUMAN 1
+        var varKey7 = "human1";
+        var var7onLabel = "MOTION DETECTED";
+        var var7offLabel = "";
+
+        var varKey8 = "battV1"; // Variable 8 - HUB BATT 1
+        var varKey9 = "battV2"; // Variable 9 - HUB BATT 2
+        
+        var failureDevice1 = 0; // failure on device 1
+        var failureDevice2 = 0; // failure on device 2
 
         const textList = document.getElementById('textList'); // scroll-bar window
         //
@@ -81,7 +97,7 @@
         //--------------------------------------------------------------
 
         // Update app heading
-        $("#app-heading").html(appHeading);
+        $("#app-heading").html(appHeading1 + appHeading2);
 
         // Override button styles
         $(".btn-lg").css({"width":"60%"});
@@ -92,57 +108,68 @@
         (label2) ? $("#button-2").html(label2) : $("#button-2").hide();
         (label3) ? $("#button-3").html(label3) : $("#button-3").hide();
         (label4) ? $("#button-4").html(label4) : $("#button-4").hide();
+        (label5) ? $("#button-5").html(label5) : $("#button-5").hide();
+        (label6) ? $("#button-6").html(label6) : $("#button-6").hide();
+        (label7) ? $("#button-7").html(label7) : $("#button-7").hide();
 
         // Override text input styles
         $(".form-control").css({"display":"inline","width":"35%"});
 
-        // Hide variable text fields if not in use.
-        if(refresh1 === 0) $("#var-val-1").hide();
-        if(refresh2 === 0) $("#var-val-2").hide();
-        if(refresh3 === 0) $("#var-val-3").hide();
-        if(refresh4 === 0) $("#var-val-4").hide();
+        // Hide variable text fields if not in use (not including battery levels)
+        if(refresh1 === 0) {
+          $("#var-val-1").hide();
+          $("#var-val-2").hide();
+          $("#var-val-3").hide();
+          $("#var-val-4").hide();
+          $("#var-val-5").hide();
+          $("#var-val-6").hide();
+          $("#var-val-7").hide();
+        }
 
         // Auto-refresh
         // Turn on/off the variable refresh if refresh rates are defined
-        if(refresh1) {
+        if(refresh1) 
+        {
           $("#get-var-1").attr("disabled", "disabled");
-          timer1 = setInterval(function () {
-            getVariable1();
-          }, refresh1);
-        }
-        if(refresh2) {
           $("#get-var-2").attr("disabled", "disabled");
-          timer2 = setInterval(function () {
-            getVariable2();
-          }, refresh2);
-        }
-        if(refresh3) {
           $("#get-var-3").attr("disabled", "disabled");
-          timer3 = setInterval(function () {
-            getVariable3();
-          }, refresh3);
-        }
-        if(refresh4) {
           $("#get-var-4").attr("disabled", "disabled");
-          timer4 = setInterval(function () {
+          $("#get-var-5").attr("disabled", "disabled");
+          $("#get-var-6").attr("disabled", "disabled");
+          $("#get-var-7").attr("disabled", "disabled");
+
+          timer1 = setInterval(function () { 
+            $("#var-val-1").val(var1offLabel).css("border", "3px solid green");
+            $("#var-val-2").val(var2offLabel).css("border", "3px solid green");
+            $("#var-val-3").val(var3offLabel).css("border", "3px solid green");
+            $("#var-val-4").val(var4offLabel).css("border", "3px solid green");
+            $("#var-val-5").val(var5offLabel).css("border", "3px solid green");
+            $("#var-val-6").val(var6offLabel).css("border", "3px solid green");
+            $("#var-val-7").val(var7offLabel).css("border", "3px solid green");
+            getVariable1(); 
+            getVariable2();
+            getVariable3();
             getVariable4();
-          }, refresh4);
-        }
-        if(refresh5) {
-          timer5 = setInterval(function () {
             getVariable5();
-          }, refresh5);
+            getVariable6();
+            getVariable7();
+            getVariable8();
+            getVariable9();
+            getVariable10();
+            getVariable11();
+            getVariable12();
+            getVariable13();
+            getVariable14();
+          }, refresh1);
         }
 
         // Alerts
-        ////
         $("#info-alert").alert();
         $("#info-alert").affix();
 
         onMethodFailure(); // Show "No Connection" initially
 
         // Methods
-        ////
         function onMethodSuccess() {
           alert = $("#info-alert");
           alert.text("Connection Established").removeClass("alert-danger").addClass("alert-success");
@@ -155,42 +182,16 @@
           alert.show();
         }
 
-        // The base level run method command
-        function doMethod(method, data) {
-          var url = baseURL + deviceID + "/" + method;
-          $.ajax({
-            type: "POST",
-            url: url,
-            data: {
-              access_token: accessToken,
-              args: data
-            },
-            dataType: "json"
-          }).success(function(obj) {
-            console.log(obj);
-            (obj.return_value && obj.return_value == 200) ? onMethodSuccess() : onMethodFailure((obj.error)?obj.error:"");
-          }).fail(function(obj) {
-            onMethodFailure();
-          });
-        }
+        $("#button-1").on("click", function () { getVariable1(); });
+        $("#button-2").on("click", function () { getVariable2(); });
+        $("#button-3").on("click", function () { getVariable3(); });
+        $("#button-4").on("click", function () { getVariable4(); });
+        $("#button-5").on("click", function () { getVariable5(); });
+        $("#button-6").on("click", function () { getVariable6(); });
+        $("#button-7").on("click", function () { getVariable7(); });
 
-        $("#button-1").on("click", function () {
-          getVariable1();
-        });
-        $("#button-2").on("click", function () {
-          getVariable2();
-        });
-        $("#button-3").on("click", function () {
-          getVariable3();
-        });
-        $("#button-4").on("click", function () {
-          getVariable4();
-        });
-
-        ////
         // Variables
-        ////
-        function getVariable(variable, callback) {
+        function getVariableHub(variable, callback, deviceID) {
           $.ajax({
           dataType: 'json',
           method: 'GET',
@@ -201,69 +202,164 @@
           },
           success: function(obj) {
             console.log(obj);
-            (obj.coreInfo.deviceID && obj.coreInfo.deviceID == deviceID) ? onMethodSuccess() : onMethodFailure((obj.error)?obj.error:"");
+            onMethodSuccess()
+            // (obj.coreInfo.deviceID && obj.coreInfo.deviceID == deviceID) ? onMethodSuccess() : onMethodFailure((obj.error)?obj.error:"");
             callback(obj.result);
+            if (deviceID == failureDevice1) failureDevice1 = 0;
+            if (deviceID == failureDevice2) failureDevice2 = 0;
           },
           error: function(obj) {
-            onMethodFailure();
+            if (deviceID == failureDevice1) failureDevice1 = 1;
+            if (deviceID == failureDevice2) failureDevice2 = 1;
+            if (failureDevice1 && failureDevice2) onMethodFailure(); // if both devices fail, show failure message
           }
           });
         }
 
         // Get variable methods
-        function getVariable1() {
-          getVariable(varKey1, function (res) {
+        function getVariable1() { // PIR 1
+          getVariableHub(varKey1, function (res) {
             if(res === var1onState) {
               $("#var-val-1").val(var1onLabel).css("border", "3px solid red");
               addMoreItems("PIR 1");
             }
             else if(res === var1offState)
               $("#var-val-1").val(var1offLabel).css("border", "3px solid green");
-            else
-              $("#var-val-1").val("---").css("border", "1px solid gray");
-          });
+          }, deviceID1);
         }
-        function getVariable2() {
-          getVariable(varKey2, function (res) {
+        function getVariable2() { // PIR 1
+          getVariableHub(varKey1, function (res) {
+            if(res === var1onState) {
+              $("#var-val-1").val(var1onLabel).css("border", "3px solid red");
+              addMoreItems("PIR 1");
+            }
+            else if(res === var1offState)
+              $("#var-val-1").val(var1offLabel).css("border", "3px solid green");
+          }, deviceID2);
+        }
+
+        function getVariable3() { // PIR 2
+          getVariableHub(varKey2, function (res) {
             if(res === var2onState) {
               $("#var-val-2").val(var2onLabel).css("border", "3px solid red");
               addMoreItems("PIR 2");
             }
             else if(res === var2offState)
               $("#var-val-2").val(var2offLabel).css("border", "3px solid green");
-            else
-              $("#var-val-2").val("---").css("border", "1px solid gray");
-          });
+          }, deviceID1);
         }
-        function getVariable3() {
-          getVariable(varKey3, function (res) {
+        function getVariable4() { // PIR 2
+          getVariableHub(varKey2, function (res) {
+            if(res === var2onState) {
+              $("#var-val-2").val(var2onLabel).css("border", "3px solid red");
+              addMoreItems("PIR 2");
+            }
+            else if(res === var2offState)
+              $("#var-val-2").val(var2offLabel).css("border", "3px solid green");
+          }, deviceID2);
+        }
+
+        function getVariable5() { // BREAK 1
+          getVariableHub(varKey3, function (res) {
             if(res === var3onState) {
               $("#var-val-3").val(var3onLabel).css("border", "3px solid red");
               addMoreItems("BREAK 1");
             }
             else if(res === var3offState)
               $("#var-val-3").val(var3offLabel).css("border", "3px solid green");
-            else
-              $("#var-val-3").val("---").css("border", "1px solid gray");
-          });
+          }, deviceID1);
         }
-        function getVariable4() {
-          getVariable(varKey4, function (res) {
+        function getVariable6() { // BREAK 1
+          getVariableHub(varKey3, function (res) {
+            if(res === var3onState) {
+              $("#var-val-3").val(var3onLabel).css("border", "3px solid red");
+              addMoreItems("BREAK 1");
+            }
+            else if(res === var3offState)
+              $("#var-val-3").val(var3offLabel).css("border", "3px solid green");
+          }, deviceID2);
+        }
+
+        function getVariable7() { // BREAK 1
+          getVariableHub(varKey4, function (res) {
             if(res === var4onState) {
               $("#var-val-4").val(var4onLabel).css("border", "3px solid red");
               addMoreItems("BREAK 2");
             }
             else if(res === var4offState)
               $("#var-val-4").val(var4offLabel).css("border", "3px solid green");
-            else
-              $("#var-val-4").val("---").css("border", "1px solid gray");
-          });
+          }, deviceID1);
         }
-        function getVariable5() {
-          getVariable(varKey5, function (res) {
-            appHeading = `HUB 01: Battery ${res}%`;
-            $("#app-heading").html(appHeading);
-          });
+        function getVariable8() { // BREAK 1
+          getVariableHub(varKey4, function (res) {
+            if(res === var4onState) {
+              $("#var-val-4").val(var4onLabel).css("border", "3px solid red");
+              addMoreItems("BREAK 2");
+            }
+            else if(res === var4offState)
+              $("#var-val-4").val(var4offLabel).css("border", "3px solid green");
+          }, deviceID2);
+        }
+
+	      function getVariable9() { // RAD 1
+          getVariableHub(varKey5, function (res) {
+            if (parseFloat(res) > 0.5) {
+              $("#var-val-5").val(res).css("border", "3px solid red");
+              addMoreItems("RAD 1");
+            }
+            else if (parseInt(res) != -1){
+              $("#var-val-5").val(res).css("border", "3px solid green");
+            }
+          }, deviceID2);
+        }
+	      function getVariable10() { // IMU 1
+          getVariableHub(varKey6, function (res) {
+            if (parseFloat(res) > 1.0) {
+              $("#var-val-6").val(res).css("border", "3px solid red");
+              addMoreItems("IMU 1");
+            }
+            else if (parseInt(res) != -1) {
+              $("#var-val-6").val(res).css("border", "3px solid green");
+            }
+          }, deviceID2);
+        }
+
+        function getVariable11() { // HUMAN 1
+          getVariableHub(varKey7, function (res) {
+            if (parseInt(res) == 0) {
+              $("#var-val-7").val("NO PRESENCE").css("border", "3px solid green");
+            }
+            else if (parseInt(res) > 1) {
+              $("#var-val-7").val(res).css("border", "3px solid red");
+              addMoreItems("HUMAN 1");
+            }
+          }, deviceID1);
+        }
+	      function getVariable12() { // HUMAN 1
+          getVariableHub(varKey7, function (res) {
+            if (parseInt(res) == 0) {
+              $("#var-val-7").val("NO PRESENCE").css("border", "3px solid green");
+            }
+            else if (parseInt(res) > 1) {
+              $("#var-val-7").val(res).css("border", "3px solid red");
+              addMoreItems("HUMAN 1");
+            }
+          }, deviceID2);
+        }
+
+        function getVariable13() {
+          appHeading = "";
+          getVariableHub(varKey8, function (res) {
+            appHeading1 = `HUB 01: Battery ${res}%`;
+            $("#app-heading").html(appHeading1 + appHeading2);
+          }, deviceID1);
+        }
+	      function getVariable14() {
+          appHeading = "";
+          getVariableHub(varKey9, function (res) {
+            appHeading2 = `  HUB 02: Battery ${res}%`;
+            $("#app-heading").html(appHeading1 + appHeading2);
+          }, deviceID2);
         }
 
         function addMoreItems(detectorName) {
@@ -296,6 +392,12 @@
             <input type="text" class="form-control" value="---" readonly id="var-val-3"><br/><br/>
             <button type="button" class="btn btn-primary btn-lg" id="button-4">BUTTON 4</button>
             <input type="text" class="form-control" value="---" readonly id="var-val-4"><br/><br/>
+	          <button type="button" class="btn btn-primary btn-lg" id="button-5">BUTTON 5</button>
+            <input type="text" class="form-control" value="---" readonly id="var-val-5"><br/><br/>
+	          <button type="button" class="btn btn-primary btn-lg" id="button-6">BUTTON 6</button>
+            <input type="text" class="form-control" value="---" readonly id="var-val-6"><br/><br/>
+	          <button type="button" class="btn btn-primary btn-lg" id="button-7">BUTTON 7</button>
+            <input type="text" class="form-control" value="---" readonly id="var-val-7"><br/><br/>
           </div>
         </div>
         <div class="alert fade in" id="info-alert" hidden data-spy="affix"></div>
